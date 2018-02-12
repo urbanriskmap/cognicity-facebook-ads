@@ -1,5 +1,9 @@
 language: node_js
 node_js: '6.10'
+branches:
+  only:
+  - master
+  - dev
 env:
   global:
   - secure: Y4eDn5TKEA91FvOTLu+h0RYd+4Z2bv8gYt+d2m+fh+zQq23JRLIQJDpjkV4q4CQutHO3Ze/22FOzwhMK4mBTiR/1NC8ch0NNS7EAVwpH0VilMWnoToA6BdaA/dtDn4D4k0YnMqKBvW24A83m0Gt9zGEd6CTlVdm5zfw13v1F0+DvK/AEn0AdQGCNGTZ6ZB4N8wrBHnnGbG1ijIZ2XfPKSEB6qugInK5Fkc7hStfTSlF+2tvz6ZI0RqCGwIuooUJepmRXe+iYIs8Soy6iRbR5UegftmwH62XMkjpYzHX8pWKFRS3/kz4tR2lHWRo8g3UD88OkJKgMufGbD3YUiiSSBrwkZVUttOwGaifsTN0LtIb9NzJxYm0UDyZzXKR7SKY6ZDmlqxoOas+EzM0xxule142C97bL3ocfvWDIG9Zf9hPTNVW6Emzf2QcbrOQR7Lyjr+OFXvnHcjuXwTQcofWv21fkR4bDzNdsAkLOqOe2hlbmD5LunTU/62sOrPuqHY0Hq9kq48EkBPYyWRyzwrF9KLwJCci16eDzLelnDfme7Lo503/m2QALHQjNfHXr1cez8CjMe238CUHRjqwgVruaksb6FiiHj8k26c5qj4IZviddNgcMC2aTSrCQQOEXS5JT3TtsFbV/CEfP29H8qN85UNI9OpWB8KjyavxQjVTtpkE=
@@ -12,5 +16,4 @@ before_install:
 install: npm install
 script:
 - npm run test && npm run coverage
-after_success: if [[ $TRAVIS_BRANCH == 'master' ]]; then npm run build;
-  serverless deploy --area India-$TRAVIS_BRANCH; fi
+after_success: npm run build && serverless deploy --area India-$TRAVIS_BRANCH
