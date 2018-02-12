@@ -8,3 +8,6 @@ bin/
 # for vim swap files
 *.swp
 *.swo
+
+*.env.yml
+keys.sh
