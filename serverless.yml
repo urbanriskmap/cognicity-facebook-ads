@@ -10,8 +10,6 @@ provider:
     area: ${opt:area}
   stage: ${file(./${opt:area}.env.yml):stage}
   region: ${file(./${opt:area}.env.yml):region}
-  stackTags:
-    area: "Testing"
 
 # You can overwrite defaults by adding the following
 #  stage: dev
