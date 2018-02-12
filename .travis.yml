@@ -12,5 +12,5 @@ before_install:
 install: npm install
 script:
 - npm run test && npm run coverage
-after_success: if [[ $TRAVIS_BRANCH == 'master' ]]; then npm run build; serverless
-  deploy; fi
+after_success: if [[ $TRAVIS_BRANCH == 'master' ]]; then npm run build;
+  serverless deploy --area India-$TRAVIS_BRANCH; fi
