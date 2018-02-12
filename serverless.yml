@@ -6,8 +6,10 @@ custom:
 provider:
   name: aws
   runtime: nodejs6.10
-  stage: prod
-  region: us-west-2
+  stackTags:
+    area: ${opt:area}
+  stage: ${file(./${opt:area}.env.yml):stage}
+  region: ${file(./${opt:area}.env.yml):region}
   stackTags:
     area: "Testing"
 
