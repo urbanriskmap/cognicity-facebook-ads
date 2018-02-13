@@ -21,6 +21,7 @@ functions:
     handler: bin/functions/index.buyFacebookAd
     environment:
       FACEBOOK_VALIDATION_TOKEN: ${file(./${opt:area}.env.yml):facebookvalidationtoken}
+      FACEBOOK_ADACCOUNT_ID: ${file(./${opt:area}.env.yml):facebookadaccountid}
       FACEBOOK_PAGE_ACCESS_TOKEN: ${file(./${opt:area}.env.yml):facebookpageaccesstoken}
       DEFAULT_LANG: ${file(./${opt:area}.env.yml):defaultlang}
       FRONTEND_CARD_PATH: ${file(./${opt:area}.env.yml):frontendcardpath}

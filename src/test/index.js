@@ -7,10 +7,11 @@
  */
 
 // Unit tests
-import testCards from './testLibCards';
-import testTwitter from './testLibTwitter';
-import testMessages from './testMessages';
-import testReceive from './testReceive';
+// import testCards from './testLibCards';
+// import testTwitter from './testLibTwitter';
+// import testMessages from './testMessages';
+// import testReceive from './testReceive';
+import testFacebookAds from './testFacebookAds';
 
 const config = {
   oauth: {
@@ -33,7 +34,8 @@ const config = {
   },
 };
 
-testCards(config);
-testTwitter(config);
-testMessages(config);
-testReceive(config);
+testFacebookAds(config);
+// testCards(config);
+// testTwitter(config);
+// testMessages(config);
+// testReceive(config);
