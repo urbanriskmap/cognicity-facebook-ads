@@ -34,7 +34,8 @@ const config = {
   },
 };
 
-testFacebookAds(config);
+// Shim the api if we're in travis CI
+testFacebookAds(config, (process.env.CI === 'true'));
 // testCards(config);
 // testTwitter(config);
 // testMessages(config);

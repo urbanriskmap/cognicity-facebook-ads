@@ -11,17 +11,14 @@ const GeoLocationAudience = adsSdk.TargetingGeoLocationCustomLocation;
 export default function(config) {
   let methods = {};
 
+  methods.accessToken = process.env.FACEBOOK_PAGE_ACCESS_TOKEN;
+  const api = adsSdk.FacebookAdsApi.init(methods.accessToken);
+  api.setDebug(true);
+  methods.accountId = process.env.FACEBOOK_ADACCOUNT_ID;
+  methods.account = new adsSdk.AdAccount(methods.accountId);
+
   methods.createAudience = () => new Promise((resolve, reject) => {
-    const accessToken = process.env.FACEBOOK_PAGE_ACCESS_TOKEN;
-    console.log('Access Token');
-    console.log(accessToken);
-    const api = adsSdk.FacebookAdsApi.init(accessToken);
-    api.setDebug(true);
-    const accountId = process.env.FACEBOOK_ADACCOUNT_ID;
-    const account = new adsSdk.AdAccount(accountId);
-    console.log('Account id is');
-    console.log(account.id);
-    account
+    methods.account
       .createCustomAudience(
         [GeoLocationAudience.Fields.Id],
         {
