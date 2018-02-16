@@ -20,12 +20,14 @@ export default function(config, shim) {
       };
     }
   });
+
+
   /**
    * lib/twitter testing harness
   **/
-  describe('Create a facebook audience', function() {
-    it('empty audience fails', function(done) {
-      fb.createAudience()
+  describe('Create a facebook campaign with above audience', function() {
+    it('empty campaign fails', function(done) {
+      fb.createCampaign()
         .then((res) => {
           console.log('Response');
           console.log(JSON.stringify(res));
@@ -34,4 +36,23 @@ export default function(config, shim) {
         });
     });
  });
+
+  /**
+   * lib/facebookAds create a custom geo audience
+  **/
+  describe('Create a facebook audience', function() {
+    it('empty audience fails', function(done) {
+      const geo = {'name': 'test',
+                  'longitude': 80.19,
+                  'latitude': 12.93,
+                  'radius': 10};
+      fb.createAudience(geo)
+        .then((res) => {
+          console.log('Response');
+          console.log(JSON.stringify(res));
+          // if the promise was fulfilled, then the request was successful
+          done();
+        });
+    });
+  });
 }

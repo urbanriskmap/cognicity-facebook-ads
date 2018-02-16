@@ -15,16 +15,26 @@ export default function(config) {
   const api = adsSdk.FacebookAdsApi.init(methods.accessToken);
   api.setDebug(true);
   methods.accountId = process.env.FACEBOOK_ADACCOUNT_ID;
-  methods.account = new adsSdk.AdAccount(methods.accountId);
+  // methods.account = new adsSdk.AdAccount(methods.accountId);
 
-  methods.createAudience = () => new Promise((resolve, reject) => {
-    methods.account
+
+  /**
+   * Creates an audience based on geolocation
+   * @param {Object} geoData
+   *      {"latitude": , "longitude": , "radius": }
+   * @return {Promise} resolved if fb responds with success
+   **/
+  methods.createAudience = (geoData) => new Promise((resolve, reject) => {
+    let account = new adsSdk.AdAccount(methods.accountId);
+    account
       .createCustomAudience(
         [GeoLocationAudience.Fields.Id],
         {
-          [GeoLocationAudience.Fields.name]: 'geo located audience',
-          [GeoLocationAudience.Fields.latitude]: 13.0827,
-          [GeoLocationAudience.Fields.longitude]: 80.2707,
+
+          [GeoLocationAudience.Fields.name]: geoData.name,
+          [GeoLocationAudience.Fields.latitude]: geoData.latitude,
+          [GeoLocationAudience.Fields.longitude]: geoData.longitude,
+          [GeoLocationAudience.Fields.radius]: geoData.radius,
           subtype: 'CUSTOM',
         }
       )
@@ -37,11 +47,7 @@ export default function(config) {
   });
 
   methods.createCampaign = () => new Promise((resolve, reject) => {
-    const accessToken = process.env.FACEBOOK_PAGE_ACCESS_TOKEN;
-    const api = adsSdk.FacebookAdsApi.init(accessToken);
-    api.setDebug(true);
-    const accountId = process.env.FACEBOOK_ADACCOUNT_ID;
-    const account = new adsSdk.AdAccount(accountId);
+    let account = new adsSdk.AdAccount(methods.accountId);
     account
       .createCampaign(
         [Campaign.Fields.Id],
