@@ -19,7 +19,5 @@ before_install:
 - npm install -g serverless
 install: npm install
 script:
-- export FACEBOOK_PAGE_ACCESS_TOKEN=${file(./${opt:area}.env.yml):facebookpageaccesstoken}
-- export FACEBOOK_ADACCOUNT_ID=${file(./${opt:area}.env.yml):facebookadaccountid}
 - npm run test && npm run coverage
 after_success: npm run build && serverless deploy --area India-$TRAVIS_BRANCH
