@@ -18,7 +18,7 @@
   "license": "GPL-3.0",
   "dependencies": {
     "dotenv": "^6.0.0",
-    "facebook-nodejs-ads-sdk": "^2.11.3",
+    "facebook-nodejs-ads-sdk": "^2.11.4",
     "request": "^2.87.0"
   },
   "devDependencies": {
