@@ -1,6 +1,7 @@
 require('dotenv').config();
 const adsSdk = require('facebook-nodejs-ads-sdk');
 const Campaign = adsSdk.Campaign;
+const Ad = adsSdk.Ad;
 const GeoLocationAudience = adsSdk.TargetingGeoLocationCustomLocation;
 
 /**
@@ -65,6 +66,48 @@ export default function(config) {
       });
   });
 
+  methods.getAllAds = () => new Promise((resolve, reject) => {
+    let account = new adsSdk.AdAccount(methods.accountId);
+    account
+      .getAds(
+        [Ad.Fields.name],
+        {
+        }
+      )
+      .then((result) => {
+        resolve(result);
+      })
+      .catch((error) => {
+        reject(error);
+      });
+  });
+
+  methods.getAdByName = (name) => new Promise((resolve, reject) => {
+    let account = new adsSdk.AdAccount(methods.accountId);
+    account
+      .getAds(
+        ['name'],
+        {
+          'name': name,
+        }
+      )
+      .then((result) => {
+        resolve(result);
+      })
+      .catch((error) => {
+        reject(error);
+      });
+  });
+
+  methods.deleteAdById = (adId) => new Promise((resolve, reject) => {
+    let ad = new adsSdk.Ad(adId);
+    delete ad.then((result) => {
+        resolve(result);
+      })
+      .catch((error) => {
+        reject(error);
+      });
+  });
 
 return methods;
 }
