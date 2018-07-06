@@ -1,10 +1,13 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](http://www.gnu.org/licenses/gpl-3.0) [![Build Status](https://travis-ci.org/urbanriskmap/twitter-dm-bot-lamda.svg?branch=master)](https://travis-ci.org/urbanriskmap/twitter-dm-bot-lamda) [![Coverage Status](https://coveralls.io/repos/github/urbanriskmap/twitter-dm-bot-lamda/badge.svg?branch=dev)](https://coveralls.io/github/urbanriskmap/twitter-dm-bot-lamda?branch=dev)
 
-## Twitter DM Bot
-Allows twitter users to submit flood reports via Twitter direct message (dm) chat bot.
-Part of the CogniCity platform, deployed for [Urban Risk Map](https://riskmap.us).
+## Lambdas to buy geographic Facebook advertisement
 
-![RiskMap bot](https://raw.githubusercontent.com/urbanriskmap/twitter-dm-bot-lamda/master/doc/images/bot.png)
+
+
+## Making app roles that can create advertisements
+- Go to [facebook business settings](https://business.facebook.com/settings?business_id=1862027380754769)
+- then System Users -> add, create an user and add the pages that you will be advertising.
+- Make a new token and use that as the authentication token for Facebook. The account stays as Urban Risk Lab USA (act_82415076)
 
 ### Building
 Built in ES6, compiled with Babel, deployed to AWS Lambda using Serverless.
@@ -33,20 +36,3 @@ Run unit tests (mocha + unit) and ESLint
 - internal methods can be simple functions
 - functionality should be testable without excessive mocking
 - Use JSDoc comments throughout
-
-## Setup Twitter Acitivty API notes
-TODO.
-- reference: https://github.com/twitterdev/twitter-webhook-boilerplate-node/blob/master/example_scripts/welcome_messages/create-welcome-message.js
-### Incoming messages
-
-1.) Create twitter app and enable DMs. This is the account registered for the activity API (e.g. @petabencana)
-2.) Use xxx script to register a webhook for scripts. store the webhook id somewhere
-3.) Use Twurl to register account that will send/receive DMs against twitter app (e.g. @riskmapus)
-4.) Use xxx script to register endpoint against a specific account for the activity API to monitor (e.g. @riskmapus)
-5.) Push default messages
-6.) Take the app key for the above app and pase it into the VARIABLE...
-
-### Outgoing messages
-1.) Register a new separate app against the account which will reply (e.g. @riskmapus)
-2.) Paste the account ID into the lambda to avoid self spam
-3.) Paste keys into VARIABLES for replies
