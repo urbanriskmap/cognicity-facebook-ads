@@ -11,12 +11,14 @@ const GeoLocationAudience = adsSdk.TargetingGeoLocationCustomLocation;
  * Facebook ad campaigns: share business objective
  *    (like impressions/clicks )
  *  - AdSet1: share budget and targeting
- *    - Ad1: "click this"
+ *    - Ad1:
+ *      - Links AdCreative("click this") + AdSet("run 10am-2pm")
  *    - Ad2: "report here"
  *    - Ad2: "chennai is flooding!"
  *  - AdSet2: different geo area
  *    - Ad1: "mumbai is flooding!"
  *
+ * More info: https://developers.facebook.com/docs/marketing-api/buying-api#ad-creative
  *
  **/
 
@@ -146,6 +148,28 @@ export default function(config) {
         reject(error);
       });
   });
+
+  methods.createAdCreative = (name, campaignId) => new
+      Promise((resolve, reject) => {
+    let account = new adsSdk.AdAccount(methods.accountId);
+    account
+      .createAdCreative(
+        [],
+        {
+        }
+      )
+      .then((result) => {
+        resolve(result);
+      })
+      .catch((error) => {
+        reject(error);
+      });
+  });
+
+  methods.createAdByTyingAdCreativeAndAdSet
+    = (adSetId, adCreativeId) => new Promise((resolve, reject) => {
+      resolve({});
+    });
 
   methods.getAdSetByName = (name) => new Promise((resolve, reject) => {
     let account = new adsSdk.AdAccount(methods.accountId);

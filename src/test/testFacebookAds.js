@@ -76,17 +76,24 @@ export default function(config, shim) {
     it('empty AdSet fails', (done) => {
       fb.createCampaign()
         .then((campaign) => {
-          console.log('empty AdSet Campaign');
-          console.log(campaign);
           fb.createAdSet('test AdSet 1', campaign.id)
             .then((res) => {
-              console.log('Response');
-              console.log(JSON.stringify(res));
               // if the promise was fulfilled, then the request was successful
               done();
             });
         });
     }).timeout(15000);
+  });
+
+  describe('Create an ad', (done) => {
+    it('tie existing creative to new adset', () => {
+      let adSetId = 0;
+      let adCreativeId = 6075713090262;
+      fb.createAdByTyingAdCreativeAndAdSet(adSetId, adCreativeId)
+        .then( () => {
+          done();
+        });
+    });
   });
 
   /**
