@@ -6,22 +6,6 @@ const Ad = adsSdk.Ad;
 const AdSet = adsSdk.AdSet;
 const GeoLocationAudience = adsSdk.TargetingGeoLocationCustomLocation;
 
-
-/**
- * Facebook ad campaigns: share business objective
- *    (like impressions/clicks )
- *  - AdSet1: share budget and targeting
- *    - Ad1:
- *      - Links AdCreative("click this") + AdSet("run 10am-2pm")
- *    - Ad2: "report here"
- *    - Ad2: "chennai is flooding!"
- *  - AdSet2: different geo area
- *    - Ad1: "mumbai is flooding!"
- *
- * More info: https://developers.facebook.com/docs/marketing-api/buying-api#ad-creative
- *
- **/
-
 /**
  * Object to directly interact with Facebook
  * @param {Object} config - twitter parameters
