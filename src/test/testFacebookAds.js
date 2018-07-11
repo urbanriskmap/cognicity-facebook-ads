@@ -14,8 +14,8 @@ let fb = facebookAds({});
 export default function(config, shim) {
   before(function() {
     if (shim) {
-      fb.createAudience = function() {
-        return new Promise(function(resolve, reject) {
+      fb.createAudience = () => {
+        return new Promise((resolve, reject) => {
           resolve('API call to createAudience was shimmed');
         });
       };
@@ -24,17 +24,40 @@ export default function(config, shim) {
 
 
   /**
-   * lib/twitter testing harness
+   * lib/facebookAd testing harness
   **/
-  describe('Create a facebook campaign with above audience', function() {
-    it('empty campaign fails', function(done) {
-      fb.createCampaign()
+  describe('Facebook Ad Campaigns', () => {
+    const TestCampaignName = 'Test campaign';
+    it('empty campaign fails', (done) => {
+      fb.createCampaign(TestCampaignName)
         .then((res) => {
           // if the promise was fulfilled, then the request was successful
           done();
         });
     });
- });
+
+    it('Get facebook campaign by name fails', (done) => {
+      fb.getCampaignByName(TestCampaignName)
+        .then((res) => {
+          done();
+        });
+    });
+
+    it('Get Campaign by name fails', function(done) {
+      fb.getCampaignByName(TestCampaignName)
+        .then((res) => {
+          console.log(JSON.stringify(res));
+          // if the promise was fulfilled, then the request was successful
+          test.value(res.name).is(TestCampaignName);
+          done();
+        });
+    });
+
+    it('Delete facebook campaign fails', (done) => {
+      done();
+    });
+  });
+
 
 //  /**
 //   * lib/facebookAds create a custom geo audience
@@ -60,8 +83,6 @@ export default function(config, shim) {
     it('empty audience fails', function(done) {
       fb.getAllAds()
         .then((res) => {
-          console.log('Response');
-          console.log(JSON.stringify(res));
           // if the promise was fulfilled, then the request was successful
           done();
         });
@@ -74,7 +95,7 @@ export default function(config, shim) {
   **/
   describe('Create a facebook AdSet', function() {
     it('empty AdSet fails', (done) => {
-      fb.createCampaign()
+      fb.createCampaign('Test Campaign for AdSet 1')
         .then((campaign) => {
           fb.createAdSet('test AdSet 1', campaign.id)
             .then((res) => {
@@ -91,20 +112,6 @@ export default function(config, shim) {
       let adCreativeId = 6075713090262;
       fb.createAdByTyingAdCreativeAndAdSet(adSetId, adCreativeId)
         .then( () => {
-          done();
-        });
-    });
-  });
-
-  /**
-   * lib/facebookAds deletes an ad based on name
-  **/
-  describe('get Campaign by name', function() {
-    it('Get Campaign by name fails', function(done) {
-      fb.getCampaignByName('test')
-        .then((res) => {
-          // if the promise was fulfilled, then the request was successful
-          test.value(res[0]._data['name']).is('test');
           done();
         });
     });

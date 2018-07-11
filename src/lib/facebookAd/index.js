@@ -15,8 +15,11 @@ export default function(config) {
   let methods = {};
 
   methods.accessToken = process.env.FACEBOOK_PAGE_ACCESS_TOKEN;
+  // adsSdk.FacebookAdsApi.init(methods.accessToken);
+  // For debug mode
   const api = adsSdk.FacebookAdsApi.init(methods.accessToken);
   api.setDebug(true);
+
   methods.accountId = process.env.FACEBOOK_ADACCOUNT_ID;
   // methods.account = new adsSdk.AdAccount(methods.accountId);
 
@@ -36,7 +39,6 @@ export default function(config) {
       .createCustomAudience(
         [GeoLocationAudience.Fields.Id],
         {
-
           [GeoLocationAudience.Fields.name]: geoData.name,
           [GeoLocationAudience.Fields.latitude]: geoData.latitude,
           [GeoLocationAudience.Fields.longitude]: geoData.longitude,
@@ -53,13 +55,13 @@ export default function(config) {
       });
   });
 
-  methods.createCampaign = () => new Promise((resolve, reject) => {
+  methods.createCampaign = (campaignName) => new Promise((resolve, reject) => {
     let account = new adsSdk.AdAccount(methods.accountId);
     account
       .createCampaign(
         [Campaign.Fields.Id],
         {
-          [Campaign.Fields.name]: 'test',
+          [Campaign.Fields.name]: campaignName,
           [Campaign.Fields.status]: Campaign.Status.paused,
           [Campaign.Fields.objective]: Campaign.Objective.page_likes,
         }
@@ -91,7 +93,6 @@ export default function(config) {
 
   methods.getCampaignByName = (name) => new Promise((resolve, reject) => {
     let account = new adsSdk.AdAccount(methods.accountId);
-    // TODO: need to manually filter by name
     account
       .getCampaigns(
         [Campaign.Fields.name],
@@ -100,7 +101,12 @@ export default function(config) {
         }
       )
       .then((result) => {
-        resolve(result);
+        for (let cam of result) {
+          if (cam.name === name) {
+            resolve(cam);
+          }
+        }
+        reject('Campaign with name ' + name + ' not found');
       })
       .catch((error) => {
         reject(error);
@@ -115,7 +121,7 @@ export default function(config) {
         [],
         {
           [AdSet.Fields.campaign_id]: campaignId,
-          [AdSet.Fields.name]: 'test Ad Set',
+          [AdSet.Fields.name]: name,
           [AdSet.Fields.targeting]: {'geo_locations': {'countries': ['US']}},
           [AdSet.Fields.promoted_object]: {'page_id': 1993743780858389},
           [AdSet.Fields.bid_amount]: 1,
