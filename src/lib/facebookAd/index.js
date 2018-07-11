@@ -16,13 +16,13 @@ export default function(config) {
 
   methods.accessToken = process.env.FACEBOOK_PAGE_ACCESS_TOKEN;
   // adsSdk.FacebookAdsApi.init(methods.accessToken);
+  //
   // For debug mode
   const api = adsSdk.FacebookAdsApi.init(methods.accessToken);
   api.setDebug(true);
 
   methods.accountId = process.env.FACEBOOK_ADACCOUNT_ID;
-  // methods.account = new adsSdk.AdAccount(methods.accountId);
-
+  methods.account = new adsSdk.AdAccount(methods.accountId);
 
   /**
    * Creates an audience based on geolocation
@@ -34,8 +34,7 @@ export default function(config) {
    * @return {Promise} resolved if fb responds with success
    **/
   methods.createAudience = (geoData) => new Promise((resolve, reject) => {
-    let account = new adsSdk.AdAccount(methods.accountId);
-    account
+    methods.account
       .createCustomAudience(
         [GeoLocationAudience.Fields.Id],
         {
@@ -56,8 +55,7 @@ export default function(config) {
   });
 
   methods.createCampaign = (campaignName) => new Promise((resolve, reject) => {
-    let account = new adsSdk.AdAccount(methods.accountId);
-    account
+    methods.account
       .createCampaign(
         [Campaign.Fields.Id],
         {
@@ -75,8 +73,7 @@ export default function(config) {
   });
 
   methods.getAllAds = () => new Promise((resolve, reject) => {
-    let account = new adsSdk.AdAccount(methods.accountId);
-    account
+    methods.account
       .getAds(
         [Ad.Fields.name],
         {
@@ -92,8 +89,7 @@ export default function(config) {
 
 
   methods.getCampaignByName = (name) => new Promise((resolve, reject) => {
-    let account = new adsSdk.AdAccount(methods.accountId);
-    account
+    methods.account
       .getCampaigns(
         [Campaign.Fields.name],
         {
@@ -106,7 +102,7 @@ export default function(config) {
             resolve(cam);
           }
         }
-        reject('Campaign with name ' + name + ' not found');
+        reject(new Error('Campaign with name ' + name + ' not found'));
       })
       .catch((error) => {
         reject(error);
@@ -115,8 +111,7 @@ export default function(config) {
 
   methods.createAdSet = (name, campaignId) => new
       Promise((resolve, reject) => {
-    let account = new adsSdk.AdAccount(methods.accountId);
-    account
+    methods.account
       .createAdSet(
         [],
         {
@@ -141,8 +136,7 @@ export default function(config) {
 
   methods.createAdCreative = (name, campaignId) => new
       Promise((resolve, reject) => {
-    let account = new adsSdk.AdAccount(methods.accountId);
-    account
+    methods.account
       .createAdCreative(
         [],
         {
@@ -156,14 +150,15 @@ export default function(config) {
       });
   });
 
+  // TODO doesn't work
   methods.createAdByTyingAdCreativeAndAdSet
     = (adSetId, adCreativeId) => new Promise((resolve, reject) => {
       resolve({});
     });
 
+  // TODO doesn't work
   methods.getAdSetByName = (name) => new Promise((resolve, reject) => {
-    let account = new adsSdk.AdAccount(methods.accountId);
-    account
+    methods.account
       .getAds(
         [AdSet.Fields.name],
         {
@@ -178,9 +173,26 @@ export default function(config) {
       });
   });
 
+  methods.getAllAdSets = (name) => new Promise((resolve, reject) => {
+    methods.account
+      .getAdSets(
+        [AdSet.Fields.name],
+        {}
+      )
+      .then((res) => resolve(res))
+      .catch((err) => reject(err));
+  });
+
+  methods.getAdSetById = (campaignId, adSetId) =>
+    new Promise((resolve, reject) => {
+      let adSet = new AdSet(adSetId);
+      adSet.read([AdSet.Fields.name])
+        .then((res) => resolve(res))
+        .catch((err) => reject(err));
+  });
+
   methods.getAdByName = (name) => new Promise((resolve, reject) => {
-    let account = new adsSdk.AdAccount(methods.accountId);
-    account
+    methods.account
       .getAds(
         [Ad.Fields.name],
         {
@@ -195,6 +207,26 @@ export default function(config) {
       });
   });
 
+  methods.deleteCampaignById
+    = (campaignId) => new Promise((resolve, reject) => {
+      new Campaign(campaignId).delete()
+         .then((result) => {
+           resolve(result);
+         }).catch((error) => {
+           reject(error);
+         });
+  });
+
+  methods.deleteAdSetById = (adSetId) => new Promise((resolve, reject) => {
+    new AdSet(adSetId).delete()
+      .then((result) => {
+        resolve(result);
+      }).catch((error) => {
+        reject(error);
+      });
+  });
+
+  // TODO fix this.
   methods.deleteAdById = (adId) => new Promise((resolve, reject) => {
     let ad = new adsSdk.Ad(adId);
     delete ad.then((result) => {
