@@ -2,8 +2,19 @@ require('dotenv').configure;
 
 import * as test from 'unit.js';
 import facebookAds from '../lib/facebookAd/';
+import config from '../config';
+import {Pool} from 'pg';
 
-let fb = facebookAds({});
+// Connection object
+const cn = `postgres://${config.PGUSER}:${config.PGPASSWORD}@${config.PGHOST}:${config.PGPORT}/${config.PGDATABASE}?ssl=${config.PGSSL}`;
+
+// Create a pool object
+const pool = new Pool({
+  connectionString: cn,
+  idleTimeoutMillis: config.PG_CLIENT_IDLE_TIMEOUT,
+});
+
+let fb = facebookAds(config, pool);
 
 /**
  * Twitter library function testing harness
@@ -32,6 +43,7 @@ export default function(config, shim) {
     it('empty campaign fails', (done) => {
       fb.createCampaign(TestCampaignName)
         .then((res) => {
+          campaignId = res.id;
           // if the promise was fulfilled, then the request was successful
           done();
         });
@@ -47,13 +59,22 @@ export default function(config, shim) {
         });
     });
 
+    it('Get campaign by id fails', (done) => {
+      fb.getCampaignById(campaignId)
+        .then((res) => {
+          test.value(res.name).is(TestCampaignName);
+          test.value(res.id).is(campaignId);
+          done();
+        });
+    });
+
     it('Delete facebook campaign fails', (done) => {
       fb.deleteCampaignById(campaignId)
         .then((res) => {
           test.value(res.success).is(true);
           done();
         });
-    });
+    }).timeout(5000);
 
     it('Should be unable to find Campaign after deltion', (done) => {
       fb.getCampaignByName(TestCampaignName)
@@ -74,8 +95,8 @@ export default function(config, shim) {
 //  describe('Create a custom facebook audience', function() {
 //    it('empty audience fails', function(done) {
 //      const geo = {'name': 'test',
-//                  'longitude': 80.19,
-//                  'latitude': 12.93,
+//                  'lng': 80.19,
+//                  'lat': 12.93,
 //                  'radius': 10};
 //      fb.createAudience(geo)
 //        .then((res) => {
@@ -89,20 +110,66 @@ export default function(config, shim) {
    * lib/facebookAds gets all ads
   **/
   describe('get all ads', function() {
-    it('empty audience fails', function(done) {
+    it('Get all ads', function(done) {
       fb.getAllAds()
         .then((res) => {
           // if the promise was fulfilled, then the request was successful
+          console.log(JSON.stringify(res));
+          done();
+        });
+    });
+
+    it.only('Get all creatives', (done) => {
+      fb.getAllAdCreatives()
+        .then((res) => {
+          console.log(JSON.stringify(res));
           done();
         });
     });
   });
 
-
   /**
    * lib/facebookAds creates an AdSet
   **/
-  describe('Facebook AdSets', () => {
+  describe.only('Facebook AdSets', () => {
+    before(function() {
+      // let queryError = false;
+      let parseError = false;
+      let adError = false;
+      // const mockQuery = function(query, params) {
+      //   return new Promise((resolve, reject) => {
+      //     if (queryError === false) {
+      //       resolve({rows: ['success']});
+      //     } else {
+      //       reject(new Error('query error'));
+      //     }
+      //   });
+      // };
+      // fb.pool.query = mockQuery;
+
+
+      const mockParse = function(data, params, callback) {
+        if (parseError === false) {
+          callback(null, 'parse succesful');
+        } else {
+          callback(new Error('parse error'), {});
+        }
+      };
+      fb.dbgeo.parse = mockParse;
+
+      const createAdMock = function(param, fields) {
+        return new Promise((resolve, reject) => {
+          if (adError === false) {
+            resolve({'success': true});
+          } else {
+            reject(new Error('query error'));
+          }
+        });
+      };
+      fb.account.createAd = createAdMock;
+    });
+
+
     let adSetName = 'test AdSet 1';
     let campaignId;
     let adSetId;
@@ -111,7 +178,12 @@ export default function(config, shim) {
         .then((campaign) => {
           // keep the id around so we can delete the campaign later
           campaignId = campaign.id;
-          fb.createAdSet(adSetName, campaign.id)
+          let geo = {
+              'lat': 36.0,
+              'lng': -121,
+              'radius': '1',
+          };
+          fb.createAdSet(adSetName, campaign.id, geo)
             .then((res) => {
               adSetId = res.id;
               // if the promise was fulfilled, then the request was successful
@@ -134,6 +206,21 @@ export default function(config, shim) {
         });
     });
 
+
+    it('tie existing creative to new adset', (done) => {
+      let adCreativeId = 6075713088662;
+      let geo = {
+        'name': 'test',
+        'lng': 80.19,
+        'lat': 12.93,
+        'radius': 10,
+      };
+      fb.createAdByTyingAdCreativeAndAdSet(adSetId, adCreativeId, geo)
+        .then(() => {
+          done();
+        });
+    });
+
     it('delete empty AdSet', (done) => {
       fb.deleteAdSetById(adSetId)
         .then((res) => {
@@ -143,6 +230,14 @@ export default function(config, shim) {
           test.assert(false);
         });
     }).timeout(15000);
+
+    it('delete campaign created for AdSet', (done) => {
+      fb.deleteCampaignById(campaignId)
+        .then((res) => {
+          test.value(res.success).is(true);
+          done();
+        });
+    }).timeout(5000);
 
     it('make sure AdSet is gone', (done) => {
       fb.getAdSetById(adSetId)

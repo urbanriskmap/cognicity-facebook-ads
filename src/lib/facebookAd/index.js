@@ -1,17 +1,18 @@
-require('dotenv').config();
-
+const dbgeo = require('dbgeo');
 const adsSdk = require('facebook-nodejs-business-sdk');
 const Campaign = adsSdk.Campaign;
 const Ad = adsSdk.Ad;
+const AdCreative = adsSdk.AdCreative;
 const AdSet = adsSdk.AdSet;
 const GeoLocationAudience = adsSdk.TargetingGeoLocationCustomLocation;
 
 /**
  * Object to directly interact with Facebook
- * @param {Object} config - twitter parameters
+ * @param {Object} config - constant parameters
+ * @param {Object} pool - pg pool object
  * @return {Object} Function methods
  **/
-export default function(config) {
+export default function(config, pool) {
   let methods = {};
 
   methods.accessToken = process.env.FACEBOOK_PAGE_ACCESS_TOKEN;
@@ -20,6 +21,9 @@ export default function(config) {
   // For debug mode
   const api = adsSdk.FacebookAdsApi.init(methods.accessToken);
   api.setDebug(true);
+  methods.pool = pool;
+  methods.config = config;
+  methods.dbgeo = dbgeo;
 
   methods.accountId = process.env.FACEBOOK_ADACCOUNT_ID;
   methods.account = new adsSdk.AdAccount(methods.accountId);
@@ -30,7 +34,9 @@ export default function(config) {
    * interacted with us before
    * Currently unused since we can just fb message previous users
    * @param {Object} geoData
-   *      {"latitude": , "longitude": , "radius": }
+   * @param {number} geoData.lat
+   * @param {number} geoData.lng
+   * @param {number} geoData.radius
    * @return {Promise} resolved if fb responds with success
    **/
   methods.createAudience = (geoData) => new Promise((resolve, reject) => {
@@ -39,8 +45,8 @@ export default function(config) {
         [GeoLocationAudience.Fields.Id],
         {
           [GeoLocationAudience.Fields.name]: geoData.name,
-          [GeoLocationAudience.Fields.latitude]: geoData.latitude,
-          [GeoLocationAudience.Fields.longitude]: geoData.longitude,
+          [GeoLocationAudience.Fields.latitude]: geoData.lat,
+          [GeoLocationAudience.Fields.longitude]: geoData.lng,
           [GeoLocationAudience.Fields.radius]: geoData.radius,
           subtype: 'CUSTOM',
           customer_file_source: 'USER_PROVIDED_ONLY',
@@ -70,6 +76,17 @@ export default function(config) {
       .catch((error) => {
         reject(error);
       });
+  });
+
+  methods.getAllAdCreatives = () => new Promise((resolve, reject) => {
+    methods.account
+      .getAdCreatives(
+        [AdCreative.Fields.name],
+        {
+        }
+      )
+      .then((res) => resolve(res))
+      .catch((err) => reject(err));
   });
 
   methods.getAllAds = () => new Promise((resolve, reject) => {
@@ -109,15 +126,52 @@ export default function(config) {
       });
   });
 
-  methods.createAdSet = (name, campaignId) => new
+  /**
+   * Gets a facebook ad campaign by id
+   * @param {number} campaignId - how wide, in kilometers to set the radius.
+   * @return {Promise} resolved with campaign obj if fb responds with success
+   **/
+  methods.getCampaignById = (campaignId) => new Promise((resolve, reject) => {
+    let cam = new Campaign(campaignId);
+    cam.read([Campaign.Fields.name])
+      .then((res) => resolve(res))
+      .catch((err) => reject(err));
+  });
+
+  /**
+   * Creates an adset around a geo location returns promise
+   * @param {string} name - name for this AdSet
+   * @param {number} campaignId -the fb campaign under which
+   *                            to create this adset
+   * @param {Object} geo - object to indicate location
+   * @param {number} geo.lat - latitude
+   * @param {number} geo.lng - longitude
+   * @param {number} geo.radius - how wide, in kilometers to set the radius.
+   *  >= 1, <=80
+   * @return {Promise} resolved if fb responds with success
+   **/
+  methods.createAdSet = (name, campaignId, geo) => new
       Promise((resolve, reject) => {
+        // targeting geo: https://developers.facebook.com/docs/marketing-api/targeting-search#geo
     methods.account
       .createAdSet(
         [],
         {
           [AdSet.Fields.campaign_id]: campaignId,
           [AdSet.Fields.name]: name,
-          [AdSet.Fields.targeting]: {'geo_locations': {'countries': ['US']}},
+          [AdSet.Fields.targeting]: {
+            'geo_locations': {
+              'custom_locations': [
+                {
+                  'latitude': geo.location.lat.toString(),
+                  'longitude': geo.location.lng.toString(),
+                  'radius': geo.location.radius.toString(),
+                  'distance_unit': 'kilometer',
+                },
+              ],
+              'location_types': ['recent'],
+            },
+          },
           [AdSet.Fields.promoted_object]: {'page_id': 1993743780858389},
           [AdSet.Fields.bid_amount]: 1,
           [AdSet.Fields.daily_budget]: 100,
@@ -134,6 +188,7 @@ export default function(config) {
       });
   });
 
+  // TODO : not filled in- might not need it
   methods.createAdCreative = (name, campaignId) => new
       Promise((resolve, reject) => {
     methods.account
@@ -150,28 +205,56 @@ export default function(config) {
       });
   });
 
-  // TODO doesn't work
   methods.createAdByTyingAdCreativeAndAdSet
-    = (adSetId, adCreativeId) => new Promise((resolve, reject) => {
-      resolve({});
-    });
+    = (adSetId, adCreativeId, geoData) => new Promise((resolve, reject) => {
+      methods.account
+        .createAd(
+          [],
+          {
+            [Ad.Fields.name]: 'Test Ad',
+            [Ad.Fields.adset_id]: adSetId,
+            [Ad.Fields.status]: 'PAUSED',
+            [Ad.Fields.creative]: {
+              'creative_id': adCreativeId,
+            },
+          }
+        ).then((res) => {
+          // put an empty obj into the fb_data table.
+          const query = `INSERT INTO ${methods.config.TABLE_OUTREACH_METADATA}
+          (properties, ${methods.config.GEO_COLUMN})
+          VALUES
+              ($1, ST_Buffer(ST_SetSRID(ST_Point($2,$3),
+              ${methods.config.GEO_SRID})::geography,
+              $4)::geometry)
+          RETURNING id, created, properties, the_geom`;
 
-  // TODO doesn't work
-  methods.getAdSetByName = (name) => new Promise((resolve, reject) => {
-    methods.account
-      .getAds(
-        [AdSet.Fields.name],
-        {
-          'name': name,
-        }
-      )
-      .then((result) => {
-        resolve(result);
-      })
-      .catch((error) => {
-        reject(error);
-      });
-  });
+          const params = {
+            outputFormat: methods.config.GEO_FORMAT_DEFAULT,
+            geometryColumn: methods.config.GEO_COLUMN,
+            geometryType: 'wkb',
+            precision: methods.config.GEO_PRECISION,
+          };
+          console.log(query);
+          console.log(methods.db);
+          let properties = {
+            adSetId: adSetId,
+            adCreativeId: adCreativeId,
+          };
+
+          methods.pool.query(query,
+            [properties, geoData.lng, geoData.lat, geoData.radius])
+            .then((result) => {
+              console.log('MAKING QUERY TO INSERT GEODATA');
+              dbgeo.parse(result.rows, params, (err, parsed) => {
+                if (err) {
+                  reject(err);
+                }
+                resolve(parsed);
+              });
+            })
+            .catch((err) => reject(err));
+        });
+    });
 
   methods.getAllAdSets = (name) => new Promise((resolve, reject) => {
     methods.account
