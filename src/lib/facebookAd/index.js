@@ -78,6 +78,10 @@ export default function(config, pool) {
       });
   });
 
+  /**
+   * Get first page of ad creatives
+   * @return {Promise} the first page of adCreatives
+   **/
   methods.getAllAdCreatives = () => new Promise((resolve, reject) => {
     methods.account
       .getAdCreatives(
@@ -89,6 +93,10 @@ export default function(config, pool) {
       .catch((err) => reject(err));
   });
 
+  /**
+   * Get first page of ads
+   * @return {Promise} the first page of ads
+   **/
   methods.getAllAds = () => new Promise((resolve, reject) => {
     methods.account
       .getAds(
@@ -104,7 +112,11 @@ export default function(config, pool) {
       });
   });
 
-
+  /**
+   * Get Campaign by name
+   * @param {string} name - the name of the campaign
+   * @return {Promise} campaigns that have name
+   **/
   methods.getCampaignByName = (name) => new Promise((resolve, reject) => {
     methods.account
       .getCampaigns(
@@ -163,9 +175,9 @@ export default function(config, pool) {
             'geo_locations': {
               'custom_locations': [
                 {
-                  'latitude': geo.location.lat.toString(),
-                  'longitude': geo.location.lng.toString(),
-                  'radius': geo.location.radius.toString(),
+                  'latitude': geo.lat.toString(),
+                  'longitude': geo.lng.toString(),
+                  'radius': geo.radius.toString(),
                   'distance_unit': 'kilometer',
                 },
               ],
@@ -189,21 +201,21 @@ export default function(config, pool) {
   });
 
   // TODO : not filled in- might not need it
-  methods.createAdCreative = (name, campaignId) => new
-      Promise((resolve, reject) => {
-    methods.account
-      .createAdCreative(
-        [],
-        {
-        }
-      )
-      .then((result) => {
-        resolve(result);
-      })
-      .catch((error) => {
-        reject(error);
-      });
-  });
+//  methods.createAdCreative = (name, campaignId) => new
+//      Promise((resolve, reject) => {
+//    methods.account
+//      .createAdCreative(
+//        [],
+//        {
+//        }
+//      )
+//      .then((result) => {
+//        resolve(result);
+//      })
+//      .catch((error) => {
+//        reject(error);
+//      });
+//  });
 
   methods.createAdByTyingAdCreativeAndAdSet
     = (adSetId, adCreativeId, geoData) => new Promise((resolve, reject) => {
@@ -219,44 +231,41 @@ export default function(config, pool) {
             },
           }
         ).then((res) => {
-          // put an empty obj into the fb_data table.
-          const query = `INSERT INTO ${methods.config.TABLE_OUTREACH_METADATA}
-          (properties, ${methods.config.GEO_COLUMN})
+          const query = `INSERT INTO ${methods.config.TABLE_OUTREACH_DATA}
+          (properties, ${methods.config.GEO_COLUMN}, f_key, fb_id)
           VALUES
-              ($1, ST_Buffer(ST_SetSRID(ST_Point($2,$3),
-              ${methods.config.GEO_SRID})::geography,
-              $4)::geometry)
+              ($1, 
+                  ST_Buffer(ST_SetSRID(ST_Point($2,$3),
+                  ${methods.config.GEO_SRID})::geography,
+                  $4)::geometry, 
+               (
+                 SELECT id FROM ${methods.config.TABLE_OUTREACH_METADATA}
+                   WHERE fb_id=$5),
+               $6
+               )
           RETURNING id, created, properties, the_geom`;
 
-          const params = {
-            outputFormat: methods.config.GEO_FORMAT_DEFAULT,
-            geometryColumn: methods.config.GEO_COLUMN,
-            geometryType: 'wkb',
-            precision: methods.config.GEO_PRECISION,
-          };
-          console.log(query);
-          console.log(methods.db);
-          let properties = {
-            adSetId: adSetId,
-            adCreativeId: adCreativeId,
-          };
+ //         let adProperties = {
+ //           id: res.id,
+ //           adSetId: adSetId,
+ //           adCreativeId: adCreativeId,
+ //         };
 
-          methods.pool.query(query,
-            [properties, geoData.lng, geoData.lat, geoData.radius])
-            .then((result) => {
-              console.log('MAKING QUERY TO INSERT GEODATA');
-              dbgeo.parse(result.rows, params, (err, parsed) => {
-                if (err) {
-                  reject(err);
-                }
-                resolve(parsed);
-              });
+          new Ad(res.id).read([Ad.Fields.name, Ad.Fields.tracking_specs])
+            .then((adProperties) => {
+              methods.pool.query(query,
+                [adProperties, geoData.lng, geoData.lat,
+                  geoData.radius, adCreativeId, adProperties.id])
+                .then((result) => {
+                  resolve(adProperties);
+                })
+                .catch((err) => reject(err));
             })
             .catch((err) => reject(err));
         });
     });
 
-  methods.getAllAdSets = (name) => new Promise((resolve, reject) => {
+  methods.getAllAdSets = () => new Promise((resolve, reject) => {
     methods.account
       .getAdSets(
         [AdSet.Fields.name],
@@ -266,28 +275,12 @@ export default function(config, pool) {
       .catch((err) => reject(err));
   });
 
-  methods.getAdSetById = (campaignId, adSetId) =>
+  methods.getAdSetById = (adSetId) =>
     new Promise((resolve, reject) => {
       let adSet = new AdSet(adSetId);
       adSet.read([AdSet.Fields.name])
         .then((res) => resolve(res))
         .catch((err) => reject(err));
-  });
-
-  methods.getAdByName = (name) => new Promise((resolve, reject) => {
-    methods.account
-      .getAds(
-        [Ad.Fields.name],
-        {
-          'name': name,
-        }
-      )
-      .then((result) => {
-        resolve(result);
-      })
-      .catch((error) => {
-        reject(error);
-      });
   });
 
   methods.deleteCampaignById
@@ -309,16 +302,61 @@ export default function(config, pool) {
       });
   });
 
-  // TODO fix this.
   methods.deleteAdById = (adId) => new Promise((resolve, reject) => {
-    let ad = new adsSdk.Ad(adId);
-    delete ad.then((result) => {
+    new adsSdk.Ad(adId).delete()
+      .then((result) => {
         resolve(result);
       })
       .catch((error) => {
         reject(error);
       });
   });
+
+  /**
+   * Gets all existing adCreatives from fb and writes to db
+   * TODO Only works if pagination is not required!
+   * @return {Promise} resolves if all creatives fb responds with are in db
+   **/
+  methods.saveAdCreativesToDB = () =>
+    new Promise((resolve, reject) => {
+      const save = (creative) => {
+        return new Promise((res, rej) => {
+          const query = `INSERT INTO ${methods.config.TABLE_OUTREACH_METADATA}
+          (fb_id, properties, )
+          )
+          VALUES($1, $2)
+          RETURNING id, fb_id, properties`;
+
+          console.log('query: ');
+          console.log(query);
+
+          methods.pool.query(query,
+            [creative.id, creative])
+            .then((result) => {
+              console.log('MAKING QUERY TO INSERT AD CREATIVE');
+              res(result);
+            })
+            .catch((err) => rej(err));
+        });
+      };
+      let allSaves = [];
+      methods.getAllAdCreatives()
+        .then((creatives) => {
+          for (let creative of creatives) {
+            allSaves.push(save(creative));
+          }
+          Promise.all(allSaves)
+            .then( (val) => {
+              resolve(val);
+            })
+            .catch((err) => {
+              reject(err);
+            });
+        })
+        .catch((error) => {
+          reject(error);
+        });
+    });
 
 return methods;
 }

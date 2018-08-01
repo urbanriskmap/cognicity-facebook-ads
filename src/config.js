@@ -20,6 +20,7 @@ export default {
   PGUSER: process.env.PGUSER || 'postgres',
   PG_CLIENT_IDLE_TIMEOUT: process.env.PG_CLIENT_IDLE_TIMEOUT || 100,
   GEO_COLUMN: process.env.GEO_COLUMN || 'the_geom',
-  TABLE_OUTREACH_METADATA: process.env.TABLE_OUTREACH_DATA || 'outreach.fb_data',
+  TABLE_OUTREACH_DATA: process.env.TABLE_OUTREACH_DATA || 'outreach.fb_data',
+  TABLE_OUTREACH_METADATA: process.env.TABLE_OUTREACH_METADATA || 'outreach.fb_metadata',
   GEO_SRID: process.env.GEO_SRID || 4326,
 };
