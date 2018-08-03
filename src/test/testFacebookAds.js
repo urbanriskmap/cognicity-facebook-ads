@@ -207,7 +207,31 @@ export default function(config, shim) {
           reject('could not find adSet');
         });
 
-        fb.createAdByTyingAdCreativeAndAdSet;
+        fb.createAdByTyingAdCreativeAndAdSet =
+          (adSetId, adCreativeId, geo) => new Promise((resolve, reject) => {
+            // remove the adset with given id
+            let id = Math.floor(Math.random()*(10000));
+            let createdAd = ({success: true, id: id});
+            // TODO: either save in the real db or the mocked one.
+            const query = `INSERT INTO ${fb.config.TABLE_OUTREACH_DATA}
+            (properties, ${fb.config.GEO_COLUMN}, f_key, fb_id)
+            VALUES
+                ($1, 
+                    ST_Buffer(ST_SetSRID(ST_Point($2,$3),
+                    ${fb.config.GEO_SRID})::geography,
+                    $4)::geometry, 
+                 (
+                   SELECT id FROM ${fb.config.TABLE_OUTREACH_METADATA}
+                     WHERE fb_id=$5),
+                 $6
+                 )
+            RETURNING id, created, properties, the_geom`;
+            pool.query(query, [createdAd, geo.lng, geo.lat,
+              geo.radius, adCreativeId, createdAd.id]).then((res) => {
+                resolve(createdAd);
+              });
+          });
+
         fb.deleteAdSetById = (id) => new Promise((resolve, reject) => {
           // remove the adset with given id
           adSetStore.store.filter( (item) => item.id !== id);
