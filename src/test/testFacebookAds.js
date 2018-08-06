@@ -1,6 +1,10 @@
 import * as test from 'unit.js';
 import facebookAds from '../lib/facebookAd/';
 import config from '../config';
+import MockCampaign from './mockCampaign';
+import MockAdSet from './mockAdSet';
+import MockAdAccount from './mockAdAccount';
+import MockAd from './mockAd';
 import {Pool} from 'pg';
 
 // Connection object
@@ -13,9 +17,7 @@ const pool = new Pool({
 });
 
 let fb = facebookAds(config, pool);
-
-const mockLibrary = true;
-const originalFB = fb;
+// let originalFB = fb;
 
 /**
  * Twitter library function testing harness
@@ -24,54 +26,44 @@ const originalFB = fb;
  *  (instead of making real calls to the sandbox)
  **/
 export default function(config, shim) {
-  before(function() {
-    let success = () => {
-      return new Promise((resolve, reject) => {
-        resolve('API call was shimmed');
-      });
-    };
+  before(() => {
+    // mock out the library functions we need:
+    if ( shim ) {
+      console.log('SHIMMING FB LIBRARY');
+      fb.account = new MockAdAccount(0);
+      fb.Campaign = MockCampaign;
+      fb.AdSet = MockAdSet;
+      fb.Ad = MockAd;
 
-    let success1 = (nameOrId) => {
-      return new Promise((resolve, reject) => {
-        resolve(
-          {
-            success: 'API call to createAudience was shimmed',
-            name: nameOrId,
-            id: nameOrId,
-          });
-      });
-    };
+      let queryError = false;
+      let parseError = false;
+      // let adError = false;
+      const mockQuery = function(query, params) {
+        return new Promise((resolve, reject) => {
+          if (queryError === false) {
+            resolve({rows: ['success']});
+          } else {
+            reject(new Error('query error'));
+          }
+        });
+      };
+      fb.pool.query = mockQuery;
 
-//    let fail = () => {
-//      return new Promise((resolve, reject) => {
-//        reject('API call to createAudience was shimmed');
-//      });
-//    };
-
-    if (shim) {
-      fb.createAudience = success;
-      fb.createCampaign = success1; // one arg
-      fb.getAllAdCreatives = success;
-      fb.getAllAds = success;
-      fb.getCampaignByName = success1; // one arg
-      fb.getCampaignById = success1; // one arg
-      fb.createAdSet = success; // 3 args
-      fb.createAdByTyingAdCreativeAndAdSet = success; // 3 args
-      fb.getAllAdSets = success;
-      fb.getAdSetById = success1; // 1 arg
-
-      fb.deleteCampaignById = success1; // 1 arg
-      fb.deleteAdSetById = success;
-      fb.deleteAdById = success;
-
-      fb.saveAdCreativesToDB = success;
+      const mockParse = function(data, params, callback) {
+        if (parseError === false) {
+          callback(null, 'parse succesful');
+        } else {
+          callback(new Error('parse error'), {});
+        }
+      };
+      fb.dbgeo.parse = mockParse;
     }
   });
 
 
   /**
    * lib/facebookAd testing harness
-  **/
+   **/
   describe('Facebook Ad Campaigns', () => {
     let campaignId;
     const TestCampaignName = 'Test campaign- should be deleted';
@@ -84,22 +76,12 @@ export default function(config, shim) {
         });
     });
 
-    it('Get Campaign by name fails', function(done) {
-      fb.getCampaignByName(TestCampaignName)
-        .then((res) => {
-          // if the promise was fulfilled, then the request was successful
-          test.value(res.name).is(TestCampaignName);
-          campaignId = res.id;
-          done();
-        });
-    });
-
     it('Get campaign by id fails', (done) => {
       fb.getCampaignById(campaignId)
         .then((res) => {
-          test.value(res.name).is(TestCampaignName);
-          test.value(res.id).is(campaignId);
           done();
+        }).catch((err) => {
+          test.assert(false);
         });
     });
 
@@ -112,7 +94,7 @@ export default function(config, shim) {
     }).timeout(5000);
 
     it('Should be unable to find Campaign after deltion', (done) => {
-      fb.getCampaignByName(TestCampaignName)
+      fb.getCampaignById(campaignId)
         .then((res) => {
           test.assert(false);
         })
@@ -169,123 +151,17 @@ export default function(config, shim) {
           console.log(res);
           done();
         })
-        .catch((err) => test.assert(false));
-    });
+        .catch((err) => {
+          console.error(err);
+          test.assert(false);
+        });
+    }).timeout(15000);
   });
 
   /**
    * lib/facebookAds creates an AdSet
   **/
-  describe.only('Facebook AdSets', () => {
-    before(() => {
-      // mock out the library functions we need:
-      if ( mockLibrary ) {
-        let adSetStore = {store: []};
-        let campaignStore = {store: []};
-
-        fb.createCampaign = (name) => new Promise((resolve, reject) => {
-          // make a random id
-          let id = Math.floor(Math.random()*(10000));
-          let cam = {name: name, id: id};
-          campaignStore.store.push(cam);
-          resolve(cam);
-        });
-        fb.createAdSet = (name, camId, geo) =>
-          new Promise((resolve, reject) => {
-            let id = Math.floor(Math.random()*(10000));
-            let obj = {name: name, camId: camId, geo: geo, id: id};
-            adSetStore.store.push(obj);
-            resolve(obj);
-          });
-
-        fb.getAdSetById = (id) => new Promise((resolve, reject) => {
-          for (let item of adSetStore.store) {
-            if (item.id === id) {
-              resolve(item);
-            }
-          }
-          reject('could not find adSet');
-        });
-
-        fb.createAdByTyingAdCreativeAndAdSet =
-          (adSetId, adCreativeId, geo) => new Promise((resolve, reject) => {
-            // remove the adset with given id
-            let id = Math.floor(Math.random()*(10000));
-            let createdAd = ({success: true, id: id});
-            // TODO: either save in the real db or the mocked one.
-            const query = `INSERT INTO ${fb.config.TABLE_OUTREACH_DATA}
-            (properties, ${fb.config.GEO_COLUMN}, f_key, fb_id)
-            VALUES
-                ($1, 
-                    ST_Buffer(ST_SetSRID(ST_Point($2,$3),
-                    ${fb.config.GEO_SRID})::geography,
-                    $4)::geometry, 
-                 (
-                   SELECT id FROM ${fb.config.TABLE_OUTREACH_METADATA}
-                     WHERE fb_id=$5),
-                 $6
-                 )
-            RETURNING id, created, properties, the_geom`;
-            pool.query(query, [createdAd, geo.lng, geo.lat,
-              geo.radius, adCreativeId, createdAd.id]).then((res) => {
-                resolve(createdAd);
-              });
-          });
-
-        fb.deleteAdSetById = (id) => new Promise((resolve, reject) => {
-          // remove the adset with given id
-          adSetStore.store.filter( (item) => item.id !== id);
-          resolve({success: true});
-        });
-
-        fb.deleteCampaignById = (id) => new Promise((resolve, reject) => {
-          // remove the adset with given id
-          campaignStore.store.filter( (item) => item.id !== id);
-          resolve({success: true});
-        });
-      }
-
-      // let queryError = false;
-      let parseError = false;
-      // let adError = false;
-      // const mockQuery = function(query, params) {
-      //   return new Promise((resolve, reject) => {
-      //     if (queryError === false) {
-      //       resolve({rows: ['success']});
-      //     } else {
-      //       reject(new Error('query error'));
-      //     }
-      //   });
-      // };
-      // fb.pool.query = mockQuery;
-
-      const mockParse = function(data, params, callback) {
-        if (parseError === false) {
-          callback(null, 'parse succesful');
-        } else {
-          callback(new Error('parse error'), {});
-        }
-      };
-      fb.dbgeo.parse = mockParse;
-
-      // const createAdMock = function(param, fields) {
-      //   return new Promise((resolve, reject) => {
-      //     if (adError === false) {
-      //       resolve({'success': true});
-      //     } else {
-      //       reject(new Error('query error'));
-      //     }
-      //   });
-      // };
-      // fb.account.createAd = createAdMock;
-    });
-
-    after(() => {
-      // reset all the functions we mocked
-      fb = originalFB;
-    });
-
-
+  describe('Facebook AdSets', () => {
     let adSetName = 'test AdSet 1';
     let campaignId;
     let adSetId;
@@ -310,18 +186,17 @@ export default function(config, shim) {
         );
     }).timeout(15000); // takes longer because it's two calls
 
-    it('read adSet', (done) => {
-      console.log(campaignId);
-      fb.getAdSetById(adSetId)
-        .then((res) => {
-          test.value(res.name).is(adSetName);
-          done();
-        }).catch((err) => {
-          // should be unable to find the adSet
-          console.error(err);
-          test.assert(false);
-        });
-    });
+//    it('should not be able to find adSet', (done) => {
+//      console.log(campaignId);
+//      fb.getAdSetById(adSetId)
+//        .then((res) => {
+//          done();
+//        }).catch((err) => {
+//          // should be unable to find the adSet
+//          console.error(err);
+//          test.assert(false);
+//        });
+//    });
 
 
     it('tie existing creative to new adset', (done) => {
