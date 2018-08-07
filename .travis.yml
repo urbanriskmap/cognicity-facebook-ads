@@ -16,5 +16,5 @@ env:
   - secure: ZqO+9FlSXhjbjeiLNn9Eesi5NKamvQ5nON/zBcasU1gyb2IsB39bbSnFVM17cGDkEH/m/YmXp3MSYIatAgX5QlYWiMkvBt6ix2d1Ae2zAu/BEOtCazJO0UyTre+N3Ustgz89TZLtZft3sYElDwi6Bn/kE3lnDzPtIRTI5dHTo9ldRBkre7wLCTTx+f1HgOdhXtsqYt4XZz+9PwFMlLW9oUXfVcKK80qVnS3iIy8SZVMJosHhdtcOf2Ymjkqwat6Lic2Tjfz60NyKh0bLdFyVoSNhAHcmCzL1DAEdIUhe63SVOuI+97tIfKft8D22Aiw3Mer2/Gpd/yoyBDnDhAUGBae4oa+fTFUpJ+4yIdOHFOZWj8D5v289zyaCsxaPj8SvWnU1gVQ7dU6yCU8C4sBcpdy0+X2h/KHKxR9MwSEryuWzc5gchB58Xurvhy1iZfS3U9ie8kcq3zwqJhIpah67jhT/F9XHKp72pUEcL7a2Z668eq6282U5pm9JpG9dBe+VSy9j49G2674146t/Tcz7Bbz5OFl30zG+3QtWR2/OFRE6NwPTJN4QuWoobQBLX/vt1qsF9BCJDpvB9E3A9XjsajZCHbMYOYnsV9rVTROsWH7rwHyj2K26UbovfNogmLq+LN55cBZljbJ9aXtFpg/CPwMXV4HqYKORj9QAt7HtMxk=
 install: npm install
 script:
-- npm run test && npm run coverage
+- npm run lint && npm run test && npm run coverage
 after_success: npm run build
