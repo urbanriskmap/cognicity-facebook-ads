@@ -8,7 +8,8 @@
     "mocha": "nyc mocha --compilers js:babel-core/register src/test/index ",
     "coverage": "nyc report --reporter=text-lcov | coveralls",
     "test": "npm run lint && npm run mocha .",
-    "build": "./node_modules/.bin/babel src -d bin"
+    "build": "./node_modules/.bin/babel src -d bin",
+    "integration": "npm run build && sls simulate apigateway -p 4000 --area=USA"
   },
   "keywords": [
     "bot",
@@ -32,6 +33,8 @@
     "eslint-config-google": "^0.9.1",
     "mocha": "^5.2.0",
     "nyc": "^12.0.2",
+    "serverless-plugin-simulate": "0.0.17",
+    "sls": "^0.1.0",
     "unit.js": "^2.0.0"
   }
 }

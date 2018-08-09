@@ -7,27 +7,23 @@ provider:
   name: aws
   runtime: nodejs6.10
   stackTags:
-    area: ${opt:area}
+    area: USA
   stage: ${file(./${opt:area}.env.yml):stage}
   region: ${file(./${opt:area}.env.yml):region}
 
-# You can overwrite defaults by adding the following
-#  stage: dev
-#  region: us-east-1
-
 # Add one function for each Lambda
 functions:
-  buyFacebookAd: # Lambda that gets triggered when a message is published to the SNS topic Twitter
-    handler: bin/functions/index.buyFacebookAd
-    environment:
-      FACEBOOK_VALIDATION_TOKEN: ${file(./${opt:area}.env.yml):facebookvalidationtoken}
-      FACEBOOK_ADACCOUNT_ID: ${file(./${opt:area}.env.yml):facebookadaccountid}
-      FACEBOOK_PAGE_ACCESS_TOKEN: ${file(./${opt:area}.env.yml):facebookpageaccesstoken}
-      DEFAULT_LANG: ${file(./${opt:area}.env.yml):defaultlang}
-      FRONTEND_CARD_PATH: ${file(./${opt:area}.env.yml):frontendcardpath}
-      FRONTEND_MAP_PATH: ${file(./${opt:area}.env.yml):frontendmappath}
-      SERVER_API_KEY: ${file(./${opt:area}.env.yml):serverapikey}
-      SERVER_PATH: ${file(./${opt:area}.env.yml):serverpath}
-      SERVER_PORT: ${file(./${opt:area}.env.yml):serverport}
+  submitAdForApproval: # Lambda that gets triggered when a message is published to the SNS topic Twitter
+    handler: bin/functions/index.submitAdForApproval
+##    environment:
+##      FACEBOOK_VALIDATION_TOKEN: ${file(./${opt:area}.env.yml):facebookvalidationtoken}
+##      FACEBOOK_ADACCOUNT_ID: ${file(./${opt:area}.env.yml):facebookadaccountid}
+##      FACEBOOK_PAGE_ACCESS_TOKEN: ${file(./${opt:area}.env.yml):facebookpageaccesstoken}
+##      DEFAULT_LANG: ${file(./${opt:area}.env.yml):defaultlang}
     events:
-      - sns: FacebookAds
+      - http: 
+          path: submit
+          method: POST
+
+plugins:
+  - serverless-plugin-simulate

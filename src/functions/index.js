@@ -1,11 +1,11 @@
 require('dotenv').config();
 
 import {Pool} from 'pg';
-import facebookAds from '../../lib/facebook/';
+import facebookAds from '../lib/facebookAd/index';
 
 // Local objects
 // TODO : make config file
-import config from '../../config';
+import config from '../config';
 // import {handleResponse} from '../../lib/util';
 
 // Connection object
@@ -29,7 +29,7 @@ const pool = new Pool({
  * @param {Object} context - AWS Lambda context object
  * @param {Object} callback - Callback (HTTP response)
  */
-module.exports.buyFacebookGeolocationAd = (event, context, callback) => {
+module.exports.submitAdForApproval = (event, context, callback) => {
   // Catch database errors
   pool.on('error', (err, client) => {
     console.error('Unexpected error on idle client', err);
@@ -47,6 +47,7 @@ module.exports.buyFacebookGeolocationAd = (event, context, callback) => {
           console.log(res);
           console.log(pool);
           // log in db that we created an Ad
+          callback(res);
         });
     }).catch((err) => {
       console.error(err);
