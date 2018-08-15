@@ -1,6 +1,7 @@
 require('dotenv').config();
 
 import {Pool} from 'pg';
+import {handleResponse} from '../util/util';
 import facebookAds from '../lib/facebookAd/index';
 
 // Local objects
@@ -36,20 +37,48 @@ module.exports.submitAdForApproval = (event, context, callback) => {
   });
 
   let message = JSON.parse(event.body);
-  let fb = facebookAds(config, pool);
+  const fb = facebookAds(config, pool);
   console.log(message);
   // TODO document the message object (API docs anyone?)
-  fb.createAdSet(message.name, message.campaignId, message.geo)
+  fb.createCampaign(message.name).then((cam)=> {
+  fb.createAdSet(message.name, cam.id, message.geo)
     .then((adSetRes) => {
       const adCreativeId = message.adCreativeId; // test: 6075713088662;
-      fb.createAdByTyingAdCreativeAndAdSet(adSetRes, adCreativeId)
+      fb.createAdByTyingAdCreativeAndAdSet(
+        adSetRes.id, adCreativeId, message.geo)
         .then((res) => {
-          console.log(res);
-          console.log(pool);
-          // log in db that we created an Ad
-          callback(res);
+          handleResponse(callback, 200, res);
+          return;
+        })
+        .catch((err) => {
+          console.error('Error Tying Ad Creative to AdSet');
         });
     }).catch((err) => {
       console.error(err);
+    });
+  }).catch((err) => {
+    console.error('Error creating campaign');
+    console.error(err);
+  });
+};
+
+/**
+ * Endpoint for sensor objects
+ * @function getSensors
+ * @param {Object} event - AWS Lambda event object
+ * @param {Object} event.body - The body of the
+ *                 request proxied by API gateway
+ * @param {Object} context - AWS Lambda context object
+ * @param {Object} callback - Callback (HTTP response)
+ */
+module.exports.getAdCreatives = (event, context, callback) => {
+  const fb = facebookAds(config, pool);
+  fb.getAllAdCreatives()
+    .then((res) => {
+      // get the image url
+
+      handleResponse(callback, 200, res);
+    }).catch((err) => {
+      handleResponse(callback, 500, null);
     });
 };

@@ -64,7 +64,23 @@ export default function(config, pool) {
         {
         }
       )
-      .then((res) => resolve(res))
+      .then((res) => {
+        console.log('RES of get all ad creatives');
+        console.log(JSON.stringify(res));
+        const final = [];
+        for (let each of res) {
+          const obj = {
+            message: each.body,
+            name: each.name,
+            id: each.id,
+            image_hash: each.image_hash,
+          };
+          console.log('obj');
+          console.log(obj);
+          final.push(obj);
+        }
+        resolve(final);
+      })
       .catch((err) => reject(err));
   });
 
@@ -238,17 +254,21 @@ export default function(config, pool) {
     new Promise((resolve, reject) => {
       const save = (creative) => {
         return new Promise((res, rej) => {
-          const query = `INSERT INTO ${methods.config.TABLE_OUTREACH_METADATA}
+          if (creative.body) {
+            const query = `INSERT INTO ${methods.config.TABLE_OUTREACH_METADATA}
           (fb_id, properties) 
           VALUES($1, $2) 
           RETURNING id, fb_id, properties`;
 
-          methods.pool.query(query,
-            [creative.id, creative])
-            .then((result) => {
-              res(result);
-            })
-            .catch((err) => rej(err));
+            methods.pool.query(query,
+              [creative.id, creative])
+              .then((result) => {
+                res(result);
+              })
+              .catch((err) => rej(err));
+          } else {
+            resolve();
+          }
         });
       };
       let allSaves = [];

@@ -131,7 +131,6 @@ export default function(config, shim) {
       fb.getAllAds()
         .then((res) => {
           // if the promise was fulfilled, then the request was successful
-          console.log(JSON.stringify(res));
           done();
         });
     });
@@ -139,16 +138,13 @@ export default function(config, shim) {
     it('Get all creatives', (done) => {
       fb.getAllAdCreatives()
         .then((res) => {
-          console.log(JSON.stringify(res));
           done();
         });
     });
 
     it('save all ad creatives to db', (done) => {
-      console.log('SAVING AD CREATIVES');
       fb.saveAdCreativesToDB()
         .then((res) => {
-          console.log(res);
           done();
         })
         .catch((err) => {
@@ -187,7 +183,6 @@ export default function(config, shim) {
     }).timeout(15000); // takes longer because it's two calls
 
 //    it('should not be able to find adSet', (done) => {
-//      console.log(campaignId);
 //      fb.getAdSetById(adSetId)
 //        .then((res) => {
 //          done();
@@ -200,7 +195,7 @@ export default function(config, shim) {
 
 
     it('tie existing creative to new adset', (done) => {
-      let adCreativeId = 6075713088662;
+      let adCreativeId= 6075713088662;
       let geo = {
         'name': 'test',
         'lng': 80.19,
@@ -212,16 +207,11 @@ export default function(config, shim) {
           // make sure that this stuff is in the db
           const query = `SELECT id FROM ${fb.config.TABLE_OUTREACH_DATA}
                         WHERE fb_id=$1`;
-          console.log(config.TABLE_OUTREACH_DATA);
-          console.log(query);
-          console.log('adResponse in Tying');
-          console.log(adResponse.id);
           pool.query(query, [adResponse.id])
             .then((res) => {
               done();
             })
             .catch((err) => {
-              console.log('CAUGHT ERRRRR');
               console.error(err);
               test.assert(false);
             });
