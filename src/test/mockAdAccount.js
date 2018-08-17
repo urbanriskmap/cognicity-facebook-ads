@@ -93,6 +93,22 @@ export default class MockAdAccount {
   }
 
   /**
+   * Mock getAdImages
+   * @param {string[]} fields
+   * @param {object} params
+   * @return {Promise} promise
+   */
+  getAdImages(fields, params) {
+    return new Promise((resolve, reject) => {
+      let images = {
+        id: 1234567,
+        permalink_url: 'test.url',
+      };
+      resolve([images]);
+    });
+  }
+
+  /**
    * Mock delete
    * @return {Promise} promise
    */

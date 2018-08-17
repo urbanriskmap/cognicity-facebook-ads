@@ -135,7 +135,7 @@ export default function(config, shim) {
         });
     });
 
-    it.only('Get all creatives', (done) => {
+    it('Get all creatives', (done) => {
       fb.getAllAdCreatives()
         .then((res) => {
           console.log(res);
@@ -143,7 +143,7 @@ export default function(config, shim) {
         });
     });
 
-    it.only('Get image url', (done) => {
+    it('Get image url', (done) => {
       fb.getImageUrlFromHashes(['a9ebbb100fecc7067aca64671db30b0b',
         '869f05ca1412fbe749d49aa488d8d3ab']
       )
