@@ -76,8 +76,35 @@ module.exports.getAdCreatives = (event, context, callback) => {
   fb.getAllAdCreatives()
     .then((res) => {
       // get the image url
+//      let getImages = (adCreatives) => new Promise((resolve, reject) => {
+//        let hashes = [];
+//        for (let adCreative of adCreatives) {
+//          hashes.push(adCreative.image_hash);
+//        }
+//
+//        fb.getImageUrlFromHashes(hashes)
+//            .then((res) => {
+//              // Now stick the url into the corresponding object
+//              console.log('GOT URLS:');
+//              for ( let i = 0; i++; i< adCreatives.length) {
+//                adCreatives[i].image_link = res[i];
+//              }
+//              resolve(adCreatives);
+//            }).catch((err) => reject(err));
+//      });
 
-      handleResponse(callback, 200, res);
+      let creativesWithImg = [];
+      // filter out the creatives that don't have images
+      // (Mostly page boosting posts)
+      for (let creative of res) {
+        if (creative.image_hash) {
+          creativesWithImg.push(creative);
+        }
+      }
+      handleResponse(callback, 200, creativesWithImg);
+      // wait for all images to be resolved
+      // getImages(creativesWithImg)
+      //   .then((finalRes) => handleResponse(callback, 200, finalRes));
     }).catch((err) => {
       handleResponse(callback, 500, null);
     });

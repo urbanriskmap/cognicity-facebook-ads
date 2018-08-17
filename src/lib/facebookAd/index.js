@@ -4,6 +4,7 @@ const Campaign = adsSdk.Campaign;
 const Ad = adsSdk.Ad;
 const AdCreative = adsSdk.AdCreative;
 const AdSet = adsSdk.AdSet;
+const AdImage = adsSdk.AdImage;
 
 /**
  * Object to directly interact with Facebook
@@ -24,12 +25,15 @@ export default function(config, pool) {
   methods.config = config;
   methods.dbgeo = dbgeo;
 
+  // TODO move this into config.js
   methods.accountId = process.env.FACEBOOK_ADACCOUNT_ID;
   methods.account = new adsSdk.AdAccount(methods.accountId);
 
+  // This is so that we can easily mock the fb library in tests
   methods.Campaign = Campaign;
   methods.AdSet = AdSet;
   methods.Ad = Ad;
+  methods.AdImage = AdImage;
 
   methods.createCampaign = (campaignName) =>
     new Promise((resolve, reject) => {
@@ -59,6 +63,7 @@ export default function(config, pool) {
       .getAdCreatives(
         [AdCreative.Fields.name,
           AdCreative.Fields.image_hash,
+          AdCreative.Fields.image_url,
           AdCreative.Fields.body,
         ],
         {
@@ -74,6 +79,7 @@ export default function(config, pool) {
             name: each.name,
             id: each.id,
             image_hash: each.image_hash,
+            image_url: each.image_url,
           };
           console.log('obj');
           console.log(obj);
@@ -82,6 +88,28 @@ export default function(config, pool) {
         resolve(final);
       })
       .catch((err) => reject(err));
+  });
+
+  /**
+   * Get corresponding permalink urls
+   * @param {string[]} hashes - hashes of images
+   * @return {string[]} permalink_url for those hashes
+   **/
+  methods.getImageUrlFromHashes = (hashes) =>
+    new Promise((resolve, reject) => {
+      methods.account.getAdImages(
+        [methods.AdImage.Fields.permalink_url],
+        {
+          hashes: hashes,
+        })
+          .then((res) => {
+            let allUrls = [];
+            for (let each of res) {
+              allUrls.push(each.permalink_url);
+            }
+            resolve(res);
+          })
+          .catch((err) => reject(err));
   });
 
   /**
