@@ -51,6 +51,8 @@ module.exports.submitAdForApproval = (event, context, callback) => {
           return;
         })
         .catch((err) => {
+          // probably the audience was too small :(
+          handleResponse(callback, 500, {error: err});
           console.error('Error Tying Ad Creative to AdSet');
         });
     }).catch((err) => {
